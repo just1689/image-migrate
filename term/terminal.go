@@ -3,8 +3,12 @@ package term
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
+	"text/tabwriter"
 )
+
+var Writer = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 type Color string
 
@@ -82,4 +86,10 @@ func AnonymizeRow(row []string) []string {
 
 func PrintRow(writer io.Writer, line []string) {
 	fmt.Fprintln(writer, strings.Join(line, "\t"))
+}
+
+func PrintWithColor(s string, color Color) {
+	colors := []Color{color}
+	PrintRow(Writer, PaintRow(colors, []string{s}))
+
 }

@@ -11,40 +11,36 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 )
 
-var interactive = flag.Bool("i", false, "interactive")
-var recursive = flag.Bool("r", false, "recursive")
-var update = flag.Bool("u", false, "update")
-var registry = flag.String("registry", "", "registry URL")
+var recursive = flag.Bool("r", false, "recursively check directories")
+var update = flag.Bool("u", false, "update the YAML file after caching locally")
+var registry = flag.String("registry", "", "registry URL (no trailing /)")
 
-var skipPush = flag.Bool("skipPush", false, "Skip pushing the image")
-var skipPull = flag.Bool("skipPull", false, "Skip pulling the image")
+var skipPush = flag.Bool("skipPush", false, "skip pushing the image")
+var skipPull = flag.Bool("skipPull", false, "skip pulling the image")
 
 func main() {
 	flag.Parse()
-	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	p := os.Args[len(os.Args)-1]
+	width := 19 + len(p)
+	writer := term.Writer
 
-	colors := []term.Color{term.MagentaText}
-	term.PrintRow(writer, term.PaintRow(colors, []string{"------------------------------------"}))
-	colors = []term.Color{term.YellowText}
-	term.PrintRow(writer, term.PaintRow(colors, []string{"      starting image-migration      "}))
-	colors = []term.Color{term.MagentaText}
-	term.PrintRow(writer, term.PaintRow(colors, []string{"------------------------------------"}))
+	term.PrintWithColor(term.Repeat("-", width), term.MagentaText)
+	term.PrintWithColor(fmt.Sprintf("%s%s%s", term.Repeat(" ", (width-24)/2), "starting image-migration", term.Repeat(" ", (width-24)/2)), term.YellowText)
+	term.PrintWithColor(term.Repeat("-", width), term.MagentaText)
 
 	// Header
-	header := []string{"path", "recursive", "Update", "interactive"}
+	header := []string{"path", "recursive", "update"}
 	term.PrintRow(writer, term.PaintRowUniformly(term.DefaultText, header))
 	term.PrintRow(writer, term.PaintRowUniformly(term.DefaultText, term.AnonymizeRow(header))) // header separator
 
-	p := os.Args[len(os.Args)-1]
-	colors = []term.Color{term.BrightYellowText, term.BrightGreenText, term.BrightGreenText, term.BrightGreenText}
-	term.PrintRow(writer, term.PaintRow(colors, []string{p, strconv.FormatBool(*recursive), strconv.FormatBool(*update), strconv.FormatBool(*interactive)}))
+	colors := []term.Color{term.BrightYellowText, term.BrightGreenText, term.BrightGreenText, term.BrightGreenText}
+	term.PrintRow(writer, term.PaintRow(colors, []string{p, strconv.FormatBool(*recursive), strconv.FormatBool(*update)}))
 
 	writer.Flush()
 	fmt.Println("")
-	files := disk.ReadAllFiles(p)
+	files := disk.ReadAllFiles(p, *recursive)
 	colors = []term.Color{term.MagentaText}
 	term.PrintRow(writer, term.PaintRow(colors, []string{"------------------------------------------"}))
 	colors = []term.Color{term.YellowText}
@@ -93,7 +89,6 @@ func main() {
 						}
 					}
 					changeSet[tab] = newTag
-
 				}
 			}
 		}

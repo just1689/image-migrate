@@ -7,12 +7,15 @@ import (
 	"path/filepath"
 )
 
-func ReadAllFiles(root string) chan string {
+func ReadAllFiles(root string, recursive bool) chan string {
 	result := make(chan string)
 	go func() {
 		defer close(result)
-		err := filepath.Walk(root, fileHandler(result))
-		if err != nil {
+		if recursive {
+			result <- root
+			return
+		}
+		if err := filepath.Walk(root, fileHandler(result)); err != nil {
 			log.Println(err)
 		}
 	}()
