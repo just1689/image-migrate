@@ -11,23 +11,25 @@ func ReadAllFiles(root string) chan string {
 	result := make(chan string)
 	go func() {
 		defer close(result)
-		err := filepath.Walk(root,
-			func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					//Ignore
-					return nil
-				}
-				if !info.IsDir() {
-					result <- path
-				}
-				//fmt.Println(path, info.Size())
-				return nil
-			})
+		err := filepath.Walk(root, fileHandler(result))
 		if err != nil {
 			log.Println(err)
 		}
 	}()
 	return result
+}
+
+func fileHandler(result chan string) func(path string, info os.FileInfo, err error) error {
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			//Ignore
+			return nil
+		}
+		if !info.IsDir() {
+			result <- path
+		}
+		return nil
+	}
 }
 
 func ReadFile(filename string) chan string {
@@ -36,7 +38,7 @@ func ReadFile(filename string) chan string {
 		defer close(result)
 		file, err := os.Open(filename)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		defer file.Close()
 		scanner := bufio.NewScanner(file)

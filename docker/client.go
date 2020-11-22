@@ -1,27 +1,16 @@
 package docker
 
 import (
-	"fmt"
 	"os/exec"
 )
 
 func Pull(tag string) (err error) {
-
 	app := "docker"
 	args := []string{
 		"pull",
 		tag,
 	}
-
-	cmd := exec.Command(app, args...)
-	//var b []byte
-	_, err = cmd.Output()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	//fmt.Println(string(b))
-	return
+	return execute(app, args)
 }
 
 func Tag(from, to string) (err error) {
@@ -31,16 +20,7 @@ func Tag(from, to string) (err error) {
 		from,
 		to,
 	}
-	fmt.Println(app, args)
-	cmd := exec.Command(app, args...)
-	//var b []byte
-	_, err = cmd.Output()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	//fmt.Println(string(b))
-	return
+	return execute(app, args)
 }
 
 func Push(tag string) (err error) {
@@ -50,13 +30,11 @@ func Push(tag string) (err error) {
 		"push",
 		tag,
 	}
+	return execute(app, args)
+}
+
+func execute(app string, args []string) (err error) {
 	cmd := exec.Command(app, args...)
-	//var b []byte
 	_, err = cmd.Output()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	//fmt.Println(string(b))
 	return
 }
