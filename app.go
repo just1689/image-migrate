@@ -19,6 +19,9 @@ var recursive = flag.Bool("r", false, "recursive")
 var update = flag.Bool("u", false, "update")
 var registry = flag.String("registry", "", "registry URL")
 
+var skipPush = flag.Bool("skipPush", false, "Skip pushing the image")
+var skipPull = flag.Bool("skipPull", false, "Skip pulling the image")
+
 type Color string
 
 // Color codes interpretted by the terminal
@@ -127,6 +130,11 @@ func main() {
 	colors = []Color{MagentaText}
 	PrintRow(writer, PaintRow(colors, []string{"------------------------------------------"}))
 	for file := range files {
+		if !strings.Contains(file, ".yaml") && !strings.Contains(file, ".yml") {
+			colors = []Color{BrightYellowText}
+			PrintRow(writer, PaintRow(colors, []string{"   ... skipping"}))
+			continue
+		}
 		changeSet := make(map[string]string)
 		colors = []Color{BrightGreenText}
 		PrintRow(writer, PaintRow(colors, []string{fmt.Sprintf("   ::: %s", file)}))
@@ -146,20 +154,43 @@ func main() {
 					tab = strings.ReplaceAll(tab, ",", "")
 					colors = []Color{BrightYellowText}
 					PrintRow(writer, PaintRow(colors, []string{fmt.Sprintf("   ... %s", tab)}))
-					err := docker.Pull(tab)
-					if err != nil {
-						log.Println("Failed", tab)
-						continue
-					}
 					newTag := fmt.Sprintf("%s/%s", *registry, tab)
-					docker.Tag(tab, newTag)
-					docker.Push(newTag)
+					if !*skipPull {
+						err := docker.Pull(tab)
+						if err != nil {
+							log.Println("Failed", tab)
+							continue
+						}
+						docker.Tag(tab, newTag)
+					}
+					if !*skipPush {
+						err := docker.Push(newTag)
+						if err != nil {
+							fmt.Println(err)
+							continue
+						}
+					}
 					changeSet[tab] = newTag
 
 				}
 			}
 		}
+		if *update && len(changeSet) != 0 {
+			newFile := fmt.Sprintf("%s.new", file)
+			out := make(chan string)
+			disk.NewWriter(newFile, out)
+			in := disk.ReadFile(file)
+			for next := range in {
+				for prev, now := range changeSet {
+					next = strings.ReplaceAll(next, prev, now)
+				}
+				out <- next
+			}
+			close(out)
+			os.Remove(file)
+			os.Rename(newFile, file)
 
+		}
 	}
 
 }
