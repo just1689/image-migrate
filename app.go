@@ -7,6 +7,7 @@ import (
 	"github.com/just1689/image-migrate/docker"
 	"github.com/just1689/image-migrate/util"
 	"io"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -126,21 +127,35 @@ func main() {
 	colors = []Color{MagentaText}
 	PrintRow(writer, PaintRow(colors, []string{"------------------------------------------"}))
 	for file := range files {
+		changeSet := make(map[string]string)
 		colors = []Color{BrightGreenText}
 		PrintRow(writer, PaintRow(colors, []string{fmt.Sprintf("   ::: %s", file)}))
 		colors = []Color{Reset}
 		lines := disk.ReadFile(file)
 		for line := range lines {
+			if strings.Contains(line, *registry) {
+				colors = []Color{BrightYellowText}
+				PrintRow(writer, PaintRow(colors, []string{"   ... skipping"}))
+				continue
+			}
 			tabs := util.SplitStringChan(line)
 			for tab := range tabs {
 				if docker.IsDockerImage(tab) || (strings.Contains(line, "image:") && docker.IsDockerImageSquishy(tab)) {
 					tab = strings.ReplaceAll(tab, "\"", "")
+					tab = strings.ReplaceAll(tab, "'", "")
+					tab = strings.ReplaceAll(tab, ",", "")
 					colors = []Color{BrightYellowText}
 					PrintRow(writer, PaintRow(colors, []string{fmt.Sprintf("   ... %s", tab)}))
-					docker.Pull(tab)
+					err := docker.Pull(tab)
+					if err != nil {
+						log.Println("Failed", tab)
+						continue
+					}
 					newTag := fmt.Sprintf("%s/%s", *registry, tab)
 					docker.Tag(tab, newTag)
 					docker.Push(newTag)
+					changeSet[tab] = newTag
+
 				}
 			}
 		}

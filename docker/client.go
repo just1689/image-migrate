@@ -14,13 +14,13 @@ func Pull(tag string) (err error) {
 	}
 
 	cmd := exec.Command(app, args...)
-	var b []byte
-	b, err = cmd.Output()
+	//var b []byte
+	_, err = cmd.Output()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Println(string(b))
+	//fmt.Println(string(b))
 	return
 }
 
@@ -33,13 +33,13 @@ func Tag(from, to string) (err error) {
 	}
 	fmt.Println(app, args)
 	cmd := exec.Command(app, args...)
-	var b []byte
-	b, err = cmd.Output()
+	//var b []byte
+	_, err = cmd.Output()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Println(string(b))
+	//fmt.Println(string(b))
 	return
 }
 
@@ -51,12 +51,12 @@ func Push(tag string) (err error) {
 		tag,
 	}
 	cmd := exec.Command(app, args...)
-	var b []byte
-	b, err = cmd.Output()
+	//var b []byte
+	_, err = cmd.Output()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Println(string(b))
+	//fmt.Println(string(b))
 	return
 }
