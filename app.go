@@ -41,27 +41,21 @@ func main() {
 	writer.Flush()
 	fmt.Println("")
 	files := disk.ReadAllFiles(p, *recursive)
-	colors = []term.Color{term.MagentaText}
-	term.PrintRow(writer, term.PaintRow(colors, []string{"------------------------------------------"}))
-	colors = []term.Color{term.YellowText}
-	term.PrintRow(writer, term.PaintRow(colors, []string{" >            Getting files           "}))
-	colors = []term.Color{term.MagentaText}
-	term.PrintRow(writer, term.PaintRow(colors, []string{"------------------------------------------"}))
+	term.PrintWithColor(term.Repeat("-", width), term.MagentaText)
+	term.PrintWithColor(fmt.Sprintf("%s%s%s", term.Repeat(" ", (width-16)/2), " > Getting files", term.Repeat(" ", (width-16)/2)), term.YellowText)
+	term.PrintWithColor(term.Repeat("-", width), term.MagentaText)
 	for file := range files {
+		changeSet := make(map[string]string)
+		term.PrintWithColor(fmt.Sprintf("   ::: %s", file), term.BrightGreenText)
 		if !strings.Contains(file, ".yaml") && !strings.Contains(file, ".yml") {
-			colors = []term.Color{term.BrightYellowText}
-			term.PrintRow(writer, term.PaintRow(colors, []string{"   ... skipping"}))
+			term.PrintWithColor("   ... skipping (not yaml)", term.YellowText)
 			continue
 		}
-		changeSet := make(map[string]string)
-		colors = []term.Color{term.BrightGreenText}
-		term.PrintRow(writer, term.PaintRow(colors, []string{fmt.Sprintf("   ::: %s", file)}))
 		colors = []term.Color{term.Reset}
 		lines := disk.ReadFile(file)
 		for line := range lines {
 			if strings.Contains(line, *registry) {
-				colors = []term.Color{term.BrightYellowText}
-				term.PrintRow(writer, term.PaintRow(colors, []string{"   ... skipping"}))
+				term.PrintWithColor("   ... skipping (already tagged for registry)", term.YellowText)
 				continue
 			}
 			tabs := util.SplitStringChan(line)
@@ -70,8 +64,7 @@ func main() {
 					tab = strings.ReplaceAll(tab, "\"", "")
 					tab = strings.ReplaceAll(tab, "'", "")
 					tab = strings.ReplaceAll(tab, ",", "")
-					colors = []term.Color{term.BrightYellowText}
-					term.PrintRow(writer, term.PaintRow(colors, []string{fmt.Sprintf("   ... %s", tab)}))
+					term.PrintWithColor(fmt.Sprintf("   ... %s", tab), term.YellowText)
 					newTag := fmt.Sprintf("%s/%s", *registry, tab)
 					if !*skipPull {
 						err := docker.Pull(tab)

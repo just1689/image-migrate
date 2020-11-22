@@ -11,7 +11,7 @@ func ReadAllFiles(root string, recursive bool) chan string {
 	result := make(chan string)
 	go func() {
 		defer close(result)
-		if recursive {
+		if !recursive {
 			result <- root
 			return
 		}
